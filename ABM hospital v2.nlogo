@@ -1,6 +1,12 @@
-Globals [ beredskapshåndtering stress_nivå belegg døde friskmeldte_pasienter antall_intensiv kompetanse_faktor stress_faktor1 stress_faktor2 stress_faktor3 stress_faktor4 sykdoms_faktor1 sykdoms_faktor2 sykdoms_faktor3 sykdoms_faktor4 sykdoms_faktor5]
+Globals [
+  dynamisk_intensiv_pasienter antall_intensiv_pasienter probability-list statistisk_intensiv statistisk_normal beredskapshåndtering
+  stress_nivå belegg døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid intensiv_pasient_vendepunkt_verdi
+  stress_faktor1 stress_faktor2 stress_faktor3 stress_faktor4 sykdoms_faktor1 sykdoms_faktor2 sykdoms_faktor3 sykdoms_faktor4 sykdoms_faktor5
+]
 
-turtles-own [ stress kompetanse sykdom sykhet frisk lengde_opphold]
+turtles-own [
+  stress kompetanse sykdom sykhet frisk lengde_opphold
+]
 
 breed [ sykepleiere sykepleier ]
 breed [ omdisponerte_sykepleiere omdisponert_sykepleier ]
@@ -9,7 +15,7 @@ breed [ friske_pasienter frisk_pasient ]
 breed [ sykepleiere_opplæring sykepleier_opplæring]
 breed [ intensiv_pasienter intensiv_pasient]
 
-extensions [csv]
+extensions [csv rnd]
 
 ;; Stress som en funksjon av kompetanse, sykepleiere rundt og sykdom
 ;; stress alene = kompetanse / sykdom
@@ -19,16 +25,27 @@ extensions [csv]
 to setup
   ca
   file-close-all
+  ;; for å kjøre simulasjonen bytt addressen under til der du har lasted ned input.csv
   file-open "C:/Users/There/Downloads/input.csv"
   set beredskapshåndtering  0
-  create-sykepleiere 5 [
+  create-sykepleiere fast_ansatt_intensiv [
     setxy random-xcor random-ycor
     set color blue
     set shape "person"
     set kompetanse 10
     set stress 0
   ]
+
+  create-sykepleiere_opplæring antall_omdisponerte [
+  setxy random-xcor random-ycor
+    set color yellow
+    set shape "person"
+    set kompetanse random 4
+    set stress random 4
+  ]
+
   reset-ticks
+  set kompetanse_faktor_arbeid 0.05
   set kompetanse_faktor 0.05
   set stress_faktor1 1
   set stress_faktor2 2
@@ -40,24 +57,41 @@ to setup
   set sykdoms_faktor3 5
   set sykdoms_faktor4 10
   set sykdoms_faktor5 20
+  set statistisk_intensiv 0.0286428686742151
+  set statistisk_normal 0.971357131325785
+  set probability-list (list (list 1 statistisk_intensiv) (list 0 statistisk_normal) )
+  set antall_intensiv_pasienter 0
+  set intensiv_pasient_vendepunkt_verdi 10
 
 end
 
 to go-1
+  ask sykepleiere_opplæring [repeat dager_før_start[ set kompetanse kompetanse + kompetanse_faktor ] ]
 
+  ask sykepleiere_opplæring [
+    set breed omdisponerte_sykepleiere set color blue set shape "person"
+  ]
+
+  ask pasienter [
+    if lengde_opphold = 6 or lengde_opphold > 6 and
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
+    if first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+
+      set lengde_opphold lengde_opphold + 1
+  ]
   if file-at-end? [ stop ]
-  set antall_intensiv file-read
-  create-pasienter antall_intensiv [
+  set antall_covid-19_pasienter file-read
+  create-pasienter antall_covid-19_pasienter [
     setxy random-xcor random-ycor
     set color green
     set shape "person"
     set sykdom random sykdoms_faktor4
   ]
-
-  ask pasienter [
-    if sykdom > sykdoms_faktor4 [set breed intensiv_pasienter set color blue set shape "person"]
+  ask intensiv_pasienter [
     if sykdom < sykdoms_faktor4 [set breed pasienter set color green set shape "person"]
+    set lengde_opphold lengde_opphold + 1
   ]
+
 
   ask sykepleiere [
     if any? sykepleiere-on neighbors [set stress stress - stress_faktor1]
@@ -73,21 +107,33 @@ to go-1
 
   ask omdisponerte_sykepleiere [
     if any? sykepleiere-on neighbors and not any? pasienter-on neighbors [set stress stress - stress_faktor1]
-    if not any? sykepleiere-on neighbors and any? pasienter-on neighbors [set stress stress + (kompetanse / sum [sykdom] of turtles-on neighbors)]
+
+    if not any? sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (kompetanse / sum [sykdom] of turtles-on neighbors)]
+
     if belegg < 1 [set stress stress + stress_faktor4]
     if belegg < 2 [set stress stress + stress_faktor3]
     if belegg > 2 [set stress stress - stress_faktor3]
     if stress < 0 [set stress 0]
+    if kompetanse < 10 [set kompetanse kompetanse + kompetanse_faktor_arbeid]
+    if kompetanse > 10 [set kompetanse 10]
+    set lengde_opphold lengde_opphold + 1
   ]
 
   ask intensiv_pasienter [
     if any? sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor1]
     if any? omdisponerte_sykepleiere-on neighbors and not any? sykepleiere-on neighbors [set sykdom sykdom + sykdoms_faktor2]
     if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom + sykdoms_faktor1]
-    if sykdom > sykdoms_faktor5 [ set døde døde + 1 die]
-    if sykdom = 0 [set breed friske_pasienter set color white set frisk 0 set shape "person"]
-    if ticks > 5 [set sykdom sykdom + sykdoms_faktor2]
-    if ticks < 5 [set sykdom sykdom - sykdoms_faktor1]
+
+
+    if sykdom > sykdoms_faktor5 [ set døde døde + 1 set dynamisk_intensiv_pasienter dynamisk_intensiv_pasienter - 1 die]
+    if sykdom = 0 [set breed friske_pasienter set color white set frisk 0 set shape "person" set dynamisk_intensiv_pasienter dynamisk_intensiv_pasienter - 1]
+
+
+    if lengde_opphold > intensiv_pasient_vendepunkt_verdi or lengde_opphold = intensiv_pasient_vendepunkt_verdi [set sykdom sykdom + sykdoms_faktor2]
+    if lengde_opphold < intensiv_pasient_vendepunkt_verdi [set sykdom sykdom - sykdoms_faktor1]
+
+
   ]
 
   ask friske_pasienter [
@@ -109,11 +155,32 @@ to go-1
   if count pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count pasienter]
   if count pasienter = 0 [set belegg 10]
   if count pasienter < 0 [set belegg 10]
+
+
+
+
+
   tick
 
 end
 
 to go-2
+  create-pasienter 1 [
+  set color green
+  set shape "person"
+  ]
+  ask pasienter [
+    if lengde_opphold = 6 or lengde_opphold > 6 and
+     first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
+    if first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" ]
+    set lengde_opphold lengde_opphold + 1
+  ]
+  ask turtles [
+  fd 5
+  rt random 90
+  ]
+  tick
+
 end
 
 to go-3
@@ -128,16 +195,25 @@ to-report antall_pasienter
   report count pasienter
 end
 
+to-report antall_intensiv
+  report count intensiv_pasienter
+end
+
+to-report kummulativt_antall_intensiv
+  report antall_intensiv_pasienter
+end
+
+
 to-report antall_sykepleiere
   report count sykepleiere + count omdisponerte_sykepleiere
 end
 
 @#$#@#$#@
 GRAPHICS-WINDOW
-437
-17
-878
-459
+661
+10
+1102
+452
 -1
 -1
 39.4
@@ -161,10 +237,10 @@ Dager
 30.0
 
 BUTTON
-226
-10
-324
-43
+460
+201
+558
+234
 Reset setup
 setup
 NIL
@@ -200,11 +276,11 @@ belegg
 11
 
 BUTTON
-226
-43
-315
-76
-Scenario 1
+460
+234
+577
+267
+Start simulering
 go-1
 T
 1
@@ -271,40 +347,6 @@ Antall_sykepleiere
 1
 11
 
-BUTTON
-226
-74
-315
-107
-Scenario 2
-go-2
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-226
-106
-315
-139
-Scenario 3
-go-3
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
 MONITOR
 0
 277
@@ -316,18 +358,94 @@ total_stress
 1
 11
 
+MONITOR
+0
+321
+146
+366
+Antall intensiv pasienter
+antall_intensiv
+17
+1
+11
+
+MONITOR
+0
+366
+175
+411
+Total antall intensiv pasienter
+antall_intensiv_pasienter
+17
+1
+11
+
+SLIDER
+149
+42
+321
+75
+Antall_omdisponerte
+Antall_omdisponerte
+0
+100
+24.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+149
+75
+321
+108
+dager_før_start
+dager_før_start
+0
+71
+0.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+148
+10
+320
+43
+fast_ansatt_intensiv
+fast_ansatt_intensiv
+0
+100
+24.0
+1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+326
+10
+476
+66
+Nærmest virkeligheten:\nfast ansatte = 24\nAntall omdisponerte = x\ndager før start = 0
+11
+0.0
+1
+
 @#$#@#$#@
 ## Hva gjør modellen?
 
-Denne modellen simulerer hvordan et sykehus sin intensiv avdeling har håndtert covid-19 pandemien gjennom den første bølgen av pandemien. Det er tre scenarioer basert på tre forskjellige grupper med konsekvenspotensial syn på sykehuset:
+Denne modellen simulerer hvordan et sykehus sin intensiv avdeling håndterer covid-19 pandemien gjennom den første bølgen av pandemien. Input data er hentet fra et sykehus i oslo regionen.  
 Scenario 1 - Virkeligheten
 Scenario 2 - Beredskapsledelsen
 Scenario 3 - Intensiv og infeksjonsavdelingen.
 
-## HOW IT WORKS
+## Om bakgrunnstallene
 
-(what rules the agents use to create the overall behavior of the model)
-
+Antall intensiv pasienter følger den statistiske riktige verdien for antall covid-19 intensiv pasienter for perioden mars til juni 2020 på 16% med en snitt liggetid på normal covid_pasienter på 6 dager. Ved å justere sliderne kan vi simulere ulike oppsett av beredskapsutførelsen. Sykehuset som simuleres startet opplæring av personell 12.03.20, som er lik 0 i dager_før_start. I Norge er det i snitt 7,21799 intensiv sykepleiere per intensivplass og de jobber tredelt turnus. 
 ## HOW TO USE IT
 
 (how to use the model, including a description of each of the items in the Interface tab)
