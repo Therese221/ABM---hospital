@@ -2,7 +2,8 @@ Globals [
   dynamisk_intensiv_pasienter antall_intensiv_pasienter probability-list statistisk_intensiv statistisk_normal beredskapshåndtering
   stress_nivå belegg døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid intensiv_pasient_vendepunkt_verdi
   stress_faktor1 stress_faktor2 stress_faktor3 stress_faktor4 sykdoms_faktor1 sykdoms_faktor2 sykdoms_faktor3 sykdoms_faktor4 sykdoms_faktor5
-  statistisk_normal_starten statistisk_intensiv_starten liggetid_normal_pasienter probability-list_starten
+  statistisk_normal_starten statistisk_intensiv_starten liggetid_normal_pasienter probability-list_starten farge_intensiv_sykepleier farge_omdisponert farge_intensiv_pasient
+  farge_normal_pasient farge_normal_pleier farge_frisk_pasient
 ]
 
 turtles-own [
@@ -26,27 +27,21 @@ extensions [csv rnd]
 to setup
   ca
   file-close-all
-  ;; for å kjøre simulasjonen bytt addressen under til der du har lasted ned input.csv
+  ;; for å kjøre simulasjonen bytt addressen under til der du har lasted ned input.csv og bagrunnsbilde.png
   file-open "C:/Users/There/Downloads/input.csv"
+  import-pcolors "C:/Users/There/PycharmProjects/ABM---hospital/bakgrunnsbilde.png"
   set beredskapshåndtering  0
-  create-sykepleiere fast_ansatt_intensiv [
-    setxy random-xcor random-ycor
-    set color blue
-    set shape "person"
-    set kompetanse 10
-    set stress 0
-  ]
-  import-pcolors-rgb "C:/Users/There/PycharmProjects/ABM---hospital/bakgrunnsbilde.png"
+  set farge_intensiv_sykepleier 95.2
+  set farge_omdisponert 115.2
+  set farge_intensiv_pasient 28.8
+  set farge_normal_pasient 18.6
+  set farge_normal_pleier 42.6
+  set farge_frisk_pasient 0
 
-  create-sykepleiere_opplæring antall_omdisponerte [
-  setxy random-xcor random-ycor
-    set color yellow
-    set shape "person"
-    set kompetanse random 4
-    set stress random 4
-  ]
 
-  reset-ticks
+
+
+
   set kompetanse_faktor_arbeid 0.05
   set kompetanse_faktor 0.05
   set stress_faktor1 1
@@ -69,25 +64,43 @@ to setup
   set intensiv_pasient_vendepunkt_verdi 10
   set liggetid_normal_pasienter 10
 
+
+  reset-ticks
+  create-sykepleiere fast_ansatt_intensiv [
+    setxy random xcor random ycor
+    move-to one-of patches with [pcolor = farge_intensiv_sykepleier]
+    set color blue
+    set shape "person"
+    set kompetanse 10
+    set stress 0
+  ]
+    create-sykepleiere_opplæring antall_omdisponerte [
+  setxy random-xcor random-ycor
+    move-to one-of patches with [pcolor = farge_omdisponert]
+    set color yellow
+    set shape "person"
+    set kompetanse random 4
+    set stress random 4
+  ]
 end
 
 to go-1
   ask sykepleiere_opplæring [repeat dager_før_start[ set kompetanse kompetanse + kompetanse_faktor ] ]
 
   ask sykepleiere_opplæring [
-    set breed omdisponerte_sykepleiere set color blue set shape "person"
+    set breed omdisponerte_sykepleiere set color yellow set shape "person"
   ]
 
   ask pasienter [
     if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and ticks < 40 or ticks = 40 and
-    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
+    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person" move-to one-of patches with [pcolor = farge_frisk_pasient]]
     if ticks < 40 or ticks = 40 and
-    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
 
     if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and ticks > 40 and
     first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
     if ticks > 40 and
-    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
 
       set lengde_opphold lengde_opphold + 1
   ]
@@ -95,6 +108,7 @@ to go-1
   set antall_covid-19_pasienter file-read
   create-pasienter antall_covid-19_pasienter [
     setxy random-xcor random-ycor
+    move-to one-of patches with [pcolor = farge_normal_pasient]
     set color green
     set shape "person"
     set sykdom random sykdoms_faktor4
@@ -159,10 +173,7 @@ to go-1
   ]
 
   let stress-list sort-on [ stress ] turtles let new-size 1 foreach stress-list [x -> ask x [set size new-size set new-size new-size + 0.01]]
-  ask turtles [
-    fd 5
-    rt random 90
-  ]
+
 
   if count pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count pasienter]
   if count pasienter = 0 [set belegg 10]
@@ -430,7 +441,7 @@ fast_ansatt_intensiv
 fast_ansatt_intensiv
 0
 100
-9.0
+24.0
 1
 1
 NIL
