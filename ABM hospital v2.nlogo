@@ -2,6 +2,7 @@ Globals [
   dynamisk_intensiv_pasienter antall_intensiv_pasienter probability-list statistisk_intensiv statistisk_normal beredskapshåndtering
   stress_nivå belegg døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid intensiv_pasient_vendepunkt_verdi
   stress_faktor1 stress_faktor2 stress_faktor3 stress_faktor4 sykdoms_faktor1 sykdoms_faktor2 sykdoms_faktor3 sykdoms_faktor4 sykdoms_faktor5
+  statistisk_normal_starten statistisk_intensiv_starten liggetid_normal_pasienter probability-list_starten
 ]
 
 turtles-own [
@@ -35,6 +36,7 @@ to setup
     set kompetanse 10
     set stress 0
   ]
+  import-pcolors-rgb "C:/Users/There/PycharmProjects/ABM---hospital/bakgrunnsbilde.png"
 
   create-sykepleiere_opplæring antall_omdisponerte [
   setxy random-xcor random-ycor
@@ -59,9 +61,13 @@ to setup
   set sykdoms_faktor5 20
   set statistisk_intensiv 0.0286428686742151
   set statistisk_normal 0.971357131325785
+  set statistisk_intensiv_starten 0.05
+  set statistisk_normal_starten 0.95
   set probability-list (list (list 1 statistisk_intensiv) (list 0 statistisk_normal) )
+  set probability-list_starten (list ( list 1 statistisk_intensiv_starten) (list 0 statistisk_normal_starten) )
   set antall_intensiv_pasienter 0
   set intensiv_pasient_vendepunkt_verdi 10
+  set liggetid_normal_pasienter 10
 
 end
 
@@ -73,9 +79,15 @@ to go-1
   ]
 
   ask pasienter [
-    if lengde_opphold = 6 or lengde_opphold > 6 and
+    if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and ticks < 40 or ticks = 40 and
+    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
+    if ticks < 40 or ticks = 40 and
+    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+
+    if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and ticks > 40 and
     first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
-    if first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+    if ticks > 40 and
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
 
       set lengde_opphold lengde_opphold + 1
   ]
@@ -207,16 +219,15 @@ end
 to-report antall_sykepleiere
   report count sykepleiere + count omdisponerte_sykepleiere
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
-661
+490
 10
-1102
-452
+921
+442
 -1
 -1
-39.4
+20.143
 1
 10
 1
@@ -226,10 +237,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--5
-5
--5
-5
+-10
+10
+-10
+10
 1
 1
 1
@@ -237,10 +248,10 @@ Dager
 30.0
 
 BUTTON
-460
-201
-558
-234
+325
+69
+423
+102
 Reset setup
 setup
 NIL
@@ -276,10 +287,10 @@ belegg
 11
 
 BUTTON
-460
-234
-577
-267
+325
+102
+442
+135
 Start simulering
 go-1
 T
@@ -419,7 +430,7 @@ fast_ansatt_intensiv
 fast_ansatt_intensiv
 0
 100
-24.0
+9.0
 1
 1
 NIL
