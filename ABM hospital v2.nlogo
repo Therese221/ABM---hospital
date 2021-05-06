@@ -1,13 +1,13 @@
 Globals [
   dynamisk_intensiv_pasienter antall_intensiv_pasienter probability-list statistisk_intensiv statistisk_normal beredskapshåndtering
-  stress_nivå belegg døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid intensiv_pasient_vendepunkt_verdi
+  stress_nivå belegg døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid
   stress_faktor1 stress_faktor2 stress_faktor3 stress_faktor4 sykdoms_faktor1 sykdoms_faktor2 sykdoms_faktor3 sykdoms_faktor4 sykdoms_faktor5
   statistisk_normal_starten statistisk_intensiv_starten liggetid_normal_pasienter probability-list_starten farge_intensiv_sykepleier farge_omdisponert farge_intensiv_pasient
-  farge_normal_pasient farge_normal_pleier farge_frisk_pasient
+  farge_normal_pasient farge_normal_pleier farge_frisk_pasient stress_sannsynlighet_stress stress_sannsynlighet1_mindre stress_sannsynlighet-liste
 ]
 
 turtles-own [
-  stress kompetanse sykdom sykhet frisk lengde_opphold
+  stress kompetanse sykdom sykhet frisk lengde_opphold kurs_dager stress_faktor normalisering intensiv_pasient_vendepunkt_verdi
 ]
 
 breed [ sykepleiere sykepleier ]
@@ -16,6 +16,7 @@ breed [ pasienter pasient ]
 breed [ friske_pasienter frisk_pasient ]
 breed [ sykepleiere_opplæring sykepleier_opplæring]
 breed [ intensiv_pasienter intensiv_pasient]
+breed [ intensiv_pasienter_ikke_covid intensiv_pasient_ikke_covid]
 
 extensions [csv rnd]
 
@@ -27,9 +28,12 @@ extensions [csv rnd]
 to setup
   ca
   file-close-all
+
   ;; for å kjøre simulasjonen bytt addressen under til der du har lasted ned input.csv og bagrunnsbilde.png
-  file-open "C:/Users/There/Downloads/input.csv"
+
+  file-open "C:/Users/There/PycharmProjects/ABM---hospital/input.csv"
   import-pcolors "C:/Users/There/PycharmProjects/ABM---hospital/bakgrunnsbilde.png"
+
   set beredskapshåndtering  0
   set farge_intensiv_sykepleier 95.2
   set farge_omdisponert 115.2
@@ -38,10 +42,6 @@ to setup
   set farge_normal_pleier 42.6
   set farge_frisk_pasient 0
 
-
-
-
-
   set kompetanse_faktor_arbeid 0.05
   set kompetanse_faktor 0.05
   set stress_faktor1 1
@@ -49,24 +49,27 @@ to setup
   set stress_faktor3 5
   set stress_faktor4 10
 
-  set sykdoms_faktor1 1
+  set sykdoms_faktor1 2
   set sykdoms_faktor2 2
-  set sykdoms_faktor3 5
-  set sykdoms_faktor4 10
-  set sykdoms_faktor5 20
+  set sykdoms_faktor3 2
+  set sykdoms_faktor4 20
+  set sykdoms_faktor5 100
   set statistisk_intensiv 0.0286428686742151
   set statistisk_normal 0.971357131325785
-  set statistisk_intensiv_starten 0.05
-  set statistisk_normal_starten 0.95
+  set statistisk_intensiv_starten 0.15
+  set statistisk_normal_starten 0.85
   set probability-list (list (list 1 statistisk_intensiv) (list 0 statistisk_normal) )
   set probability-list_starten (list ( list 1 statistisk_intensiv_starten) (list 0 statistisk_normal_starten) )
+  set stress_sannsynlighet_stress 0.907
+  set stress_sannsynlighet1_mindre 0.093
+  set stress_sannsynlighet-liste (list (list 1 stress_sannsynlighet_stress) (list 0 stress_sannsynlighet1_mindre) )
   set antall_intensiv_pasienter 0
-  set intensiv_pasient_vendepunkt_verdi 10
-  set liggetid_normal_pasienter 10
+  set liggetid_normal_pasienter 6
 
 
   reset-ticks
-  create-sykepleiere fast_ansatt_intensiv [
+
+  create-sykepleiere (fast_ansatt_intensiv - antall_i_ren_intensiv_sone) [
     setxy random xcor random ycor
     move-to one-of patches with [pcolor = farge_intensiv_sykepleier]
     set color blue
@@ -74,7 +77,7 @@ to setup
     set kompetanse 10
     set stress 0
   ]
-    create-sykepleiere_opplæring antall_omdisponerte [
+    create-sykepleiere_opplæring Antall_omdisponerte_ved_pandemi_start [
   setxy random-xcor random-ycor
     move-to one-of patches with [pcolor = farge_omdisponert]
     set color yellow
@@ -82,28 +85,48 @@ to setup
     set kompetanse random 4
     set stress random 4
   ]
+
+  ask sykepleiere [
+      move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]
+
+  ask sykepleiere_opplæring [
+    move-to one-of patches with [pcolor = farge_omdisponert]]
+
+
+
 end
 
 to go-1
-  ask sykepleiere_opplæring [repeat dager_før_start[ set kompetanse kompetanse + kompetanse_faktor ] ]
 
-  ask sykepleiere_opplæring [
-    set breed omdisponerte_sykepleiere set color yellow set shape "person"
-  ]
+  ;; Her gjennomføres opplæring for omdisponerte sykepleiere og stress påvirkning settes etter sannsynlighet
+
+  ask sykepleiere_opplæring [set kurs_dager kurs_dager + 1 set kompetanse kompetanse + kompetanse_faktor ]
+
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 0
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 0.5 ]]
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 1
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 1 ]]
+;; Her kjøres det sannynlighets beregning for om normal pasient blir intensiv pasient.
 
   ask pasienter [
     if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and ticks < 40 or ticks = 40 and
     first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person" move-to one-of patches with [pcolor = farge_frisk_pasient]]
     if ticks < 40 or ticks = 40 and
-    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+    first rnd:weighted-one-of-list probability-list_starten [ [p] -> last p ] = 1
+    [set breed intensiv_pasienter set color red set shape "person"
+      move-to one-of patches with [pcolor = farge_intensiv_pasient]
+      set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10]
 
     if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and ticks > 40 and
     first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [set breed friske_pasienter set color white set shape "person"]
     if ticks > 40 and
-    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 ]
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1 [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10]
 
       set lengde_opphold lengde_opphold + 1
   ]
+
+   ;; Her lages normal pasienter fra input.csv
+
   if file-at-end? [ stop ]
   set antall_covid-19_pasienter file-read
   create-pasienter antall_covid-19_pasienter [
@@ -113,10 +136,29 @@ to go-1
     set shape "person"
     set sykdom random sykdoms_faktor4
   ]
+
+  ;; Her gjøres intensivpasienter til normal pasienter hvis sykdom er lavere en sykdoms_faktor4
+
   ask intensiv_pasienter [
-    if sykdom < sykdoms_faktor4 [set breed pasienter set color green set shape "person"]
+    if sykdom < sykdoms_faktor4 [set breed pasienter set color green set shape "person" move-to one-of patches with [pcolor = farge_normal_pasient]]
     set lengde_opphold lengde_opphold + 1
   ]
+
+
+  ;; Her lages intensiv_pasienter for å få opp antallet pasienter, kun for teste formål
+
+  if count pasienter > 5 [if count intensiv_pasienter < 2 [ask n-of 3 pasienter [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10 ]
+  ]]
+
+
+  ;; flytting av sykepleiere her
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask sykepleiere [
+    if not any? intensiv_pasienter-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask omdisponerte_sykepleiere [if not any? intensiv_pasienter-on neighbors [move-to one-of patches with [pcolor = farge_omdisponert]]]]
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+
+  ;; Her skjer stress beregninger
 
 
   ask sykepleiere [
@@ -146,9 +188,14 @@ to go-1
     set lengde_opphold lengde_opphold + 1
   ]
 
+
+
+  ;; Her skjer sykdoms beregninger
+
   ask intensiv_pasienter [
-    if any? sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor1]
-    if any? omdisponerte_sykepleiere-on neighbors and not any? sykepleiere-on neighbors [set sykdom sykdom + sykdoms_faktor2]
+    if count sykepleiere-on neighbors = 2 [set sykdom sykdom - sykdoms_faktor1]
+    if count sykepleiere-on neighbors = 1 [set sykdom sykdom - sykdoms_faktor1]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and not any? sykepleiere-on neighbors [set sykdom sykdom + sykdoms_faktor2]
     if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom + sykdoms_faktor1]
 
 
@@ -159,7 +206,7 @@ to go-1
     if lengde_opphold > intensiv_pasient_vendepunkt_verdi or lengde_opphold = intensiv_pasient_vendepunkt_verdi [set sykdom sykdom + sykdoms_faktor2]
     if lengde_opphold < intensiv_pasient_vendepunkt_verdi [set sykdom sykdom - sykdoms_faktor1]
 
-
+    ;; Her justeres måltall og friske pasienter blir borte
   ]
 
   ask friske_pasienter [
@@ -171,16 +218,22 @@ to go-1
      set sykdom sykdom + sykdoms_faktor1
      set lengde_opphold lengde_opphold + 1
   ]
+;; Denne justerer størrelsen på agentene etter stress
 
   let stress-list sort-on [ stress ] turtles let new-size 1 foreach stress-list [x -> ask x [set size new-size set new-size new-size + 0.01]]
 
 
-  if count pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count pasienter]
-  if count pasienter = 0 [set belegg 10]
-  if count pasienter < 0 [set belegg 10]
+
+  ;; Her beregnes belegg
+  if count intensiv_pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count intensiv_pasienter]
+  if count intensiv_pasienter = 0 [set belegg 10]
+  if count intensiv_pasienter < 0 [set belegg 10]
 
 
-
+  ;; Her trigges omdisponering av ansatte
+  if belegg < Trigger_omdisponering_sykepleiere_per_pasient or belegg = Trigger_omdisponering_sykepleiere_per_pasient and count sykepleiere_opplæring < 5 [create-sykepleiere_opplæring 5 [set color yellow set shape "person" set kompetanse random 4 set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if count omdisponerte_sykepleiere > 5 and belegg > Trigger_normalisering_sykepleiere_per_pasient or belegg = Trigger_normalisering_sykepleiere_per_pasient and count pasienter < 30 [ask n-of 5 omdisponerte_sykepleiere [set normalisering normalisering + 1 ]]
+  ask omdisponerte_sykepleiere [if normalisering = 5 [die]]
 
 
   tick
@@ -232,10 +285,10 @@ to-report antall_sykepleiere
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-490
-10
-921
-442
+642
+15
+1073
+447
 -1
 -1
 20.143
@@ -259,10 +312,10 @@ Dager
 30.0
 
 BUTTON
-325
-69
-423
-102
+484
+183
+582
+216
 Reset setup
 setup
 NIL
@@ -298,10 +351,10 @@ belegg
 11
 
 BUTTON
-325
-102
-442
-135
+484
+216
+601
+249
 Start simulering
 go-1
 T
@@ -403,25 +456,25 @@ antall_intensiv_pasienter
 11
 
 SLIDER
-149
-42
-321
-75
-Antall_omdisponerte
-Antall_omdisponerte
+209
+318
+486
+351
+Antall_omdisponerte_ved_pandemi_start
+Antall_omdisponerte_ved_pandemi_start
 0
 100
-24.0
+0.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-149
-75
+211
+288
+383
 321
-108
 dager_før_start
 dager_før_start
 0
@@ -448,14 +501,74 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-326
+465
 10
-476
-66
-Nærmest virkeligheten:\nfast ansatte = 24\nAntall omdisponerte = x\ndager før start = 0
+615
+164
+Nærmest virkeligheten:\nfast ansatte = 24\nAntall i ren intensiv sone = 5\ntrigger omdisponering = 1 eller mindre\nTrigger normalisering = 5\ndager før start = 0\nantall omdisponerte ved start = 0\ndager opplæring etter start = 5\n
 11
 0.0
 1
+
+SLIDER
+147
+74
+462
+107
+Trigger_omdisponering_sykepleiere_per_pasient
+Trigger_omdisponering_sykepleiere_per_pasient
+0
+3
+1.5
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+147
+42
+337
+75
+antall_i_ren_intensiv_sone
+antall_i_ren_intensiv_sone
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+209
+350
+503
+383
+dager_opplæring_omdisponerte_etter_start
+dager_opplæring_omdisponerte_etter_start
+0
+100
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+147
+108
+462
+141
+Trigger_normalisering_sykepleiere_per_pasient
+Trigger_normalisering_sykepleiere_per_pasient
+0
+10
+3.0
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## Hva gjør modellen?
