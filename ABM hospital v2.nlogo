@@ -3,8 +3,9 @@ Globals [
   beredskapshåndtering beredskaps_vellykkethet beredskapshåndtering_stress_relatert beredskapshåndtering_kompetanse_relatert beredskapshåndtering_døds_relatert beredskapshåndtering_kommunikasjon
   beredskapshåndtering_stress_relatert_ticks multipliserende_faktor_kommunikasjon beredskapshåndtering_totaldødlighet beredskapshåndtering_totaldødlighet_scenario beredskapshåndtering_døds_relatert_multiplikator
   beredskapshåndtering_forventa_døde_37_dager beredskapshåndtering_forventa_døde_52_dager beredskapshåndtering_forventa_døde_82_dager døde_beredskap døde_37_dager
-  antall_kompetanse_over_3 antall_kompetanse_under_3 beredskapshåndtering_kompetanse_relatert_faktor_multiplikator beredskapshåndtering_kompetanse_relatert_faktor
-  stress_nivå belegg belegg_stress_beregning døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid
+  kompetanse_over_3 kompetanse_under_3 kompetanse_under_2 antall_omdisponerte_31
+  antall_kompetanse_over_3 antall_kompetanse_under_3_til_2 beredskapshåndtering_kompetanse_relatert_faktor_multiplikator beredskapshåndtering_kompetanse_relatert_faktor
+  stress_nivå belegg belegg_stress_beregning døde friskmeldte_pasienter antall_covid-19_pasienter kompetanse_faktor kompetanse_faktor_arbeid antall_kompetanse_under_3 antall_kompetanse_under_2_til_1
   stress_faktor_sykepleier minus_stress_faktor_sykepleier_sykepleier stress_faktor_sykepleier_omdisponert stress_faktor_omdisponert stress_faktor_omdisponert_omdisponert
   stress_faktor_belegg_under_1 stress_faktor_belegg_under2 minus_stress_faktor_belegg_over2 akseptabelt_stress_nivå minus_stress_faktor_ingen_pasienter kritiskt_stress_nivå sykemelding_stress_nivå konstant_stress_nivå
   sykdoms_faktor_sykepleier_sykepleier sykdoms_faktor_sykepleier_omdisponert sykdoms_faktor_omdisponert_omdisponert sykdoms_faktor_pasient_økning_dag sykdoms_faktor5
@@ -54,16 +55,19 @@ to setup
 
   set beredskapshåndtering  1000
   set beredskapshåndtering_stress_relatert 250
-  set beredskapshåndtering_kompetanse_relatert 250
+  set beredskapshåndtering_kompetanse_relatert 0
   set beredskapshåndtering_døds_relatert 250
   set beredskapshåndtering_kommunikasjon 250
   set multipliserende_faktor_kommunikasjon 10
   set beredskapshåndtering_totaldødlighet 0.029
   set beredskapshåndtering_forventa_døde_37_dager 6
-  set beredskapshåndtering_forventa_døde_52_dager 7
+  set beredskapshåndtering_forventa_døde_52_dager 29
   set beredskapshåndtering_forventa_døde_82_dager 7
   set beredskapshåndtering_døds_relatert_multiplikator 2
-  set beredskapshåndtering_kompetanse_relatert_faktor_multiplikator 2
+  set kompetanse_over_3 10
+  set kompetanse_under_3 5
+  set kompetanse_under_2 2
+
 
   set kompetanse_faktor_arbeid 0.01
   set kompetanse_faktor 0.05
@@ -278,7 +282,7 @@ to go-1
   ask intensiv_pasienter [
     if count sykepleiere-on neighbors > 2 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier_sykepleier]
     if count sykepleiere-on neighbors = 1 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier]
-    if count omdisponerte_sykepleiere-on neighbors > 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors)]
+    if count omdisponerte_sykepleiere-on neighbors > 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - ((count omdisponerte_sykepleiere-on neighbors / sum [kompetanse] of omdisponerte_sykepleiere-on neighbors) * 2)]
     if count omdisponerte_sykepleiere-on neighbors = 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors)]
     if count omdisponerte_sykepleiere-on neighbors = 1 and count sykepleiere-on neighbors = 1 [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors + sykdoms_faktor_sykepleier)]
 
@@ -330,25 +334,33 @@ to go-1
   ;; kommunikasjon
   if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
   if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) ]
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder_ppe * antall_ledelsesorganer_ppe * multipliserende_faktor_kommunikasjon) ]
 
   ;; stress
   if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) > 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
   if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) = 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
 
 
+
+
   ;; kompetanse
-  set døde_37_dager døde_beredskap
-  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse > 3] [set antall_kompetanse_over_3 antall_kompetanse_over_3 + 1]]
-  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 3] [set antall_kompetanse_under_3 antall_kompetanse_under_3 + 1]]
 
-  if ticks = 20 [set beredskapshåndtering_kompetanse_relatert_faktor (antall_kompetanse_under_3 * beredskapshåndtering_kompetanse_relatert_faktor_multiplikator)]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 5 and kompetanse >= 3  ] [set antall_kompetanse_over_3 antall_kompetanse_over_3 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 3 and kompetanse >= 2  ]  [set antall_kompetanse_under_3_til_2 antall_kompetanse_under_3_til_2 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 2 and kompetanse >= 1 ] [set antall_kompetanse_under_2_til_1 antall_kompetanse_under_2_til_1 + 1] ]
 
-  if ticks = 20 [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert - ( beredskapshåndtering_kompetanse_relatert_faktor )]
 
+
+  if ticks = 20 [set beredskapshåndtering_kompetanse_relatert_faktor ((antall_kompetanse_over_3 * kompetanse_over_3) + (antall_kompetanse_under_3_til_2 * kompetanse_under_3) + (antall_kompetanse_under_2_til_1 * kompetanse_under_2))]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor < 250 or beredskapshåndtering_kompetanse_relatert_faktor = 250  [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert_faktor]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
   ;; døde
   if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
 
-  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - beredskapshåndtering_kompetanse_relatert]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kommunikasjon)]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_døds_relatert)]
@@ -368,7 +380,7 @@ to go-1
 
 end
 
-to r-tall-simualtor
+to go-2
 ;; Legge inn r-tall modell for pasienter
 
 
@@ -385,7 +397,762 @@ to r-tall-simualtor
 end
 
 to go-3
+  ;; Driftsutvalget
+
+
+  if ticks = 60 [ stop ]
+  set beredskapshåndtering_stress_relatert_ticks 0
+  ;; Her gjennomføres opplæring for omdisponerte sykepleiere og stress påvirkning settes etter sannsynlighet
+
+  ask sykepleiere_opplæring [set kurs_dager kurs_dager + 1 set kompetanse kompetanse + kompetanse_faktor ]
+
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 0
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 0.5 ]]
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 1
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 1 ]]
+
+   if ticks = 3 [create-omdisponerte_sykepleiere 3 [
+  setxy random-xcor random-ycor
+    move-to one-of patches with [pcolor = farge_omdisponert]
+    set color yellow
+    set shape "person"
+    set kompetanse (3 + random-float 1)
+    set stress random 4
+  ]]
+
+
+;; Her kjøres det sannynlighets beregning for om normal pasient blir intensiv pasient.
+
+
+
+
+
+  ask pasienter [
+    if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [
+     set breed friske_pasienter set color white set shape "person" move-to one-of patches with [pcolor = farge_frisk_pasient]]
+
+
+    if first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1[
+      set breed intensiv_pasienter set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10
+      set color red set shape "person"
+      move-to one-of patches with [pcolor = farge_intensiv_pasient]
+      ]
+
+
+      set lengde_opphold lengde_opphold + 1
+  ]
+
+   ;; Her lages normal pasienter fra input.csv
+
+  if file-at-end? [ stop ]
+  set antall_covid-19_pasienter file-read
+  create-pasienter antall_covid-19_pasienter [
+    setxy random-xcor random-ycor
+    move-to one-of patches with [pcolor = farge_normal_pasient]
+    set color green
+    set shape "person"
+    set sykdom 0
+  ]
+
+  ;; Her gjøres intensivpasienter til normal pasienter hvis sykdom er lavere en sykdoms_faktor4
+
+  ask intensiv_pasienter [
+    if lengde_opphold = lengde_opphold_ut_av_intensiv and sykdom < sykdoms_faktor_kan_ikke_utskrives [set breed pasienter set color green set shape "person" move-to one-of patches with [pcolor = farge_normal_pasient]]
+    set lengde_opphold lengde_opphold + 1
+  ]
+
+
+  ;; Her lages intensiv_pasienter for å få opp antallet pasienter, kun for teste formål
+
+ ; if count pasienter > 5 [if count intensiv_pasienter < 2 [ask n-of 3 pasienter [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10 ]
+  ;]]
+
+
+  ;; flytting av sykepleiere her
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask sykepleiere [
+    while [not any? intensiv_pasienter-on neighbors] [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask omdisponerte_sykepleiere [while [not any? intensiv_pasienter-on neighbors] [move-to one-of patches with [pcolor = farge_omdisponert]]]]
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+
+  ;; Her skjer stress beregninger
+
+
+
+  ask sykepleiere [
+    if any? sykepleiere-on neighbors [set stress stress - minus_stress_faktor_sykepleier_sykepleier]
+
+    if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + stress_faktor_sykepleier ]
+    if not any? sykepleiere-on neighbors and any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + stress_faktor_sykepleier_omdisponert ]
+
+
+
+
+
+    if stress < 50 and  belegg_stress_beregning < 1 [set stress stress + stress_faktor_belegg_under_1]
+    if stress < 50 and  belegg_stress_beregning < 2 and belegg_stress_beregning > 1 [set stress stress + stress_faktor_belegg_under2]
+    if belegg_stress_beregning > 2 or belegg_stress_beregning = 2 [set stress stress - minus_stress_faktor_belegg_over2]
+    if ticks = 37 [set stress stress - 5]
+    if stress > akseptabelt_stress_nivå and stress < kritiskt_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 1]
+    if stress > kritiskt_stress_nivå and stress < sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 5]
+    if stress > sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 20 die]
+    if stress < konstant_stress_nivå [set stress konstant_stress_nivå]
+  ]
+
+
+  ask omdisponerte_sykepleiere [
+    if any? sykepleiere-on neighbors and not any? pasienter-on neighbors [set stress stress - minus_stress_faktor_ingen_pasienter]
+
+    if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (sum [sykdom] of intensiv_pasienter-on neighbors / kompetanse) ]
+
+    if not any? sykepleiere-on neighbors and any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (sum [sykdom] of intensiv_pasienter-on neighbors / kompetanse) ]
+
+
+
+    if stress < 50 and belegg_stress_beregning < 1 [set stress stress + stress_faktor_belegg_under_1]
+    if stress < 50 and belegg_stress_beregning < 2 and belegg_stress_beregning > 1 [set stress stress + stress_faktor_belegg_under2]
+    if belegg_stress_beregning > 2 [set stress stress - minus_stress_faktor_belegg_over2]
+    if ticks = 37 [set stress stress - 5]
+    if stress < konstant_stress_nivå [set stress konstant_stress_nivå]
+    if stress > akseptabelt_stress_nivå and stress < kritiskt_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 1]
+    if stress > kritiskt_stress_nivå and stress < sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 5]
+    if stress > sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 20 die]
+    if kompetanse < 10 [set kompetanse kompetanse + kompetanse_faktor_arbeid]
+    if kompetanse > 10 [set kompetanse 10]
+    set lengde_opphold lengde_opphold + 1
+  ]
+  if beredskapshåndtering_stress_relatert < 0 [set beredskapshåndtering_stress_relatert 0]
+
+  ;; Her skjer sykdoms beregninger
+
+
+  ask intensiv_pasienter [set sykdom sykdom + sykdoms_faktor_pasient_økning_dag ]
+
+  ask intensiv_pasienter [
+    if count sykepleiere-on neighbors > 2 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier_sykepleier]
+    if count sykepleiere-on neighbors = 1 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier]
+    if count omdisponerte_sykepleiere-on neighbors > 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - ((count omdisponerte_sykepleiere-on neighbors / sum [kompetanse] of omdisponerte_sykepleiere-on neighbors) * 2)]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors)]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and count sykepleiere-on neighbors = 1 [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors + sykdoms_faktor_sykepleier)]
+
+
+    if sykdom > 80  and first rnd:weighted-one-of-list probability-list_død_intensiv [ [p] -> last p ] = 1 [ set døde døde + 1 set dynamisk_intensiv_pasienter dynamisk_intensiv_pasienter - 1 set døde_beredskap døde_beredskap + 1  die]
+  ]
+
+    ;; Her justeres måltall og friske pasienter blir borte
+
+
+  ask friske_pasienter [
+    if frisk = 1 [set friskmeldte_pasienter friskmeldte_pasienter + 1 die]
+    set frisk frisk + 1
+  ]
+
+  ask pasienter [
+     set lengde_opphold lengde_opphold + 1
+  ]
+;; Denne justerer størrelsen på agentene etter stress
+
+  let stress-list sort-on [ stress ] turtles let new-size 1 foreach stress-list [x -> ask x [set size new-size set new-size new-size + 0.01]]
+
+
+
+  ;; Her beregnes belegg
+  if count intensiv_pasienter > 0 [set belegg_stress_beregning (count sykepleiere / count intensiv_pasienter) ]
+  if count intensiv_pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count intensiv_pasienter]
+  if count intensiv_pasienter = 0 [set belegg 10]
+  if count intensiv_pasienter < 0 [set belegg 10]
+
+
+  ;; Her trigges omdisponering av ansatte
+  set antall_omdisponerte count intensiv_pasienter
+  set antall_die antall_omdisponerte - 30
+
+
+  if ticks > 0 and ticks < 31 and count omdisponerte_sykepleiere = 30 or count omdisponerte_sykepleiere < 30 and belegg < Trigger_omdisponering_sykepleiere_per_pasient or belegg = Trigger_omdisponering_sykepleiere_per_pasient and count sykepleiere_opplæring < 5 [create-omdisponerte_sykepleiere 5 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if count omdisponerte_sykepleiere > 5 and belegg > Trigger_normalisering_sykepleiere_per_pasient and count pasienter < 30 [ask n-of 5 omdisponerte_sykepleiere [set normalisering normalisering + 1 ]]
+  ;ask omdisponerte_sykepleiere [if normalisering = 3 [die]]
+  ;if count omdisponerte_sykepleiere > 30 [ask n-of (antall_die) omdisponerte_sykepleiere die]
+
+
+
+  ;; Her normaliseres sykehuset etter scenario
+  if ticks = 31 [set antall_omdisponerte_31 (((count omdisponerte_sykepleiere) / 2) / 9)]
+
+  if ticks > 31 and ticks < 40 [ask n-of (antall_omdisponerte_31) omdisponerte_sykepleiere [die]]
+
+
+  ;; Her oppdateres beredskaps_vellykkethet
+
+
+
+
+  ;; kommunikasjon
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) ]
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder_ppe * antall_ledelsesorganer_ppe * multipliserende_faktor_kommunikasjon) ]
+
+  ;; stress
+  if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) > 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
+  if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) = 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
+
+
+
+
+  ;; kompetanse
+
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 5 and kompetanse >= 3  ] [set antall_kompetanse_over_3 antall_kompetanse_over_3 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 3 and kompetanse >= 2  ]  [set antall_kompetanse_under_3_til_2 antall_kompetanse_under_3_til_2 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 2 and kompetanse >= 1 ] [set antall_kompetanse_under_2_til_1 antall_kompetanse_under_2_til_1 + 1] ]
+
+
+
+  if ticks = 20 [set beredskapshåndtering_kompetanse_relatert_faktor ((antall_kompetanse_over_3 * kompetanse_over_3) + (antall_kompetanse_under_3_til_2 * kompetanse_under_3) + (antall_kompetanse_under_2_til_1 * kompetanse_under_2))]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor < 250 or beredskapshåndtering_kompetanse_relatert_faktor = 250  [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert_faktor]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
+  ;; døde
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kommunikasjon)]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_døds_relatert)]
+
+  if beredskapshåndtering = 1000 or (beredskapshåndtering > 900) [set beredskaps_vellykkethet 10]
+  if beredskapshåndtering = 900 or (beredskapshåndtering > 800 and beredskapshåndtering < 900) [set beredskaps_vellykkethet 9]
+  if beredskapshåndtering = 800 or (beredskapshåndtering > 700 and beredskapshåndtering < 800) [set beredskaps_vellykkethet 8]
+  if beredskapshåndtering = 700 or (beredskapshåndtering > 600 and beredskapshåndtering < 700) [set beredskaps_vellykkethet 7]
+  if beredskapshåndtering = 600 or (beredskapshåndtering > 500 and beredskapshåndtering < 600) [set beredskaps_vellykkethet 6]
+  if beredskapshåndtering = 500 or (beredskapshåndtering > 400 and beredskapshåndtering < 500) [set beredskaps_vellykkethet 5]
+  if beredskapshåndtering = 400 or (beredskapshåndtering > 300 and beredskapshåndtering < 400) [set beredskaps_vellykkethet 4]
+  if beredskapshåndtering = 300 or (beredskapshåndtering > 200 and beredskapshåndtering < 300) [set beredskaps_vellykkethet 3]
+  if beredskapshåndtering = 200 or (beredskapshåndtering > 100 and beredskapshåndtering < 200) [set beredskaps_vellykkethet 2]
+  if beredskapshåndtering = 100 or (beredskapshåndtering > 000 and beredskapshåndtering < 100) [set beredskaps_vellykkethet 1]
+  if beredskapshåndtering < 000 [set beredskaps_vellykkethet 0]
+  tick
+
+
+
+
 end
+
+
+to go-4
+  ;; Intensiv
+
+  if ticks = 60 [ stop ]
+  set beredskapshåndtering_stress_relatert_ticks 0
+  ;; Her gjennomføres opplæring for omdisponerte sykepleiere og stress påvirkning settes etter sannsynlighet
+  if ticks = 0 [create-sykepleiere_opplæring 15 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 0 [ask sykepleiere_opplæring [repeat dager_før_start [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 0 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 0
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 0.5 ]]
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 1
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 1 ]]
+
+
+
+;; Her kjøres det sannynlighets beregning for om normal pasient blir intensiv pasient.
+
+
+
+
+
+  ask pasienter [
+    if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [
+     set breed friske_pasienter set color white set shape "person" move-to one-of patches with [pcolor = farge_frisk_pasient]]
+
+
+    if first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1[
+      set breed intensiv_pasienter set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10
+      set color red set shape "person"
+      move-to one-of patches with [pcolor = farge_intensiv_pasient]
+      ]
+
+
+      set lengde_opphold lengde_opphold + 1
+  ]
+
+   ;; Her lages normal pasienter fra input.csv
+
+  if file-at-end? [ stop ]
+  set antall_covid-19_pasienter file-read
+  create-pasienter antall_covid-19_pasienter [
+    setxy random-xcor random-ycor
+    move-to one-of patches with [pcolor = farge_normal_pasient]
+    set color green
+    set shape "person"
+    set sykdom 0
+  ]
+
+  ;; Her gjøres intensivpasienter til normal pasienter hvis sykdom er lavere en sykdoms_faktor4
+
+  ask intensiv_pasienter [
+    if lengde_opphold = lengde_opphold_ut_av_intensiv and sykdom < sykdoms_faktor_kan_ikke_utskrives [set breed pasienter set color green set shape "person" move-to one-of patches with [pcolor = farge_normal_pasient]]
+    set lengde_opphold lengde_opphold + 1
+  ]
+
+
+  ;; Her lages intensiv_pasienter for å få opp antallet pasienter, kun for teste formål
+
+ ; if count pasienter > 5 [if count intensiv_pasienter < 2 [ask n-of 3 pasienter [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10 ]
+  ;]]
+
+
+  ;; flytting av sykepleiere her
+
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask sykepleiere [
+    while [not any? intensiv_pasienter-on neighbors] [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask omdisponerte_sykepleiere [while [not any? intensiv_pasienter-on neighbors] [move-to one-of patches with [pcolor = farge_omdisponert]]]]
+   ask intensiv_pasienter [if count omdisponerte_sykepleiere-on neighbors > 2 [ask one-of omdisponerte_sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_omdisponert]]]]
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+
+  ;; Her skjer stress beregninger
+
+
+
+  ask sykepleiere [
+    if any? sykepleiere-on neighbors [set stress stress - minus_stress_faktor_sykepleier_sykepleier]
+
+    if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + stress_faktor_sykepleier ]
+    if not any? sykepleiere-on neighbors and any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + stress_faktor_sykepleier_omdisponert ]
+
+
+
+
+
+    if stress < 50 and  belegg_stress_beregning < 1 [set stress stress + stress_faktor_belegg_under_1]
+    if stress < 50 and  belegg_stress_beregning < 2 and belegg_stress_beregning > 1 [set stress stress + stress_faktor_belegg_under2]
+    if belegg_stress_beregning > 2 or belegg_stress_beregning = 2 [set stress stress - minus_stress_faktor_belegg_over2]
+    if ticks = 37 [set stress stress - 5]
+    if stress > akseptabelt_stress_nivå and stress < kritiskt_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 1]
+    if stress > kritiskt_stress_nivå and stress < sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 5]
+    if stress > sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 20 die]
+    if stress < konstant_stress_nivå [set stress konstant_stress_nivå]
+  ]
+
+
+  ask omdisponerte_sykepleiere [
+    if any? sykepleiere-on neighbors and not any? pasienter-on neighbors [set stress stress - minus_stress_faktor_ingen_pasienter]
+
+    if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (sum [sykdom] of intensiv_pasienter-on neighbors / kompetanse) ]
+
+    if not any? sykepleiere-on neighbors and any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (sum [sykdom] of intensiv_pasienter-on neighbors / kompetanse) ]
+
+
+
+    if stress < 50 and belegg_stress_beregning < 1 [set stress stress + stress_faktor_belegg_under_1]
+    if stress < 50 and belegg_stress_beregning < 2 and belegg_stress_beregning > 1 [set stress stress + stress_faktor_belegg_under2]
+    if belegg_stress_beregning > 2 [set stress stress - minus_stress_faktor_belegg_over2]
+    if ticks = 37 [set stress stress - 5]
+    if stress < konstant_stress_nivå [set stress konstant_stress_nivå]
+    if stress > akseptabelt_stress_nivå and stress < kritiskt_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 1]
+    if stress > kritiskt_stress_nivå and stress < sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 5]
+    if stress > sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 20 die]
+    if kompetanse < 10 [set kompetanse kompetanse + kompetanse_faktor_arbeid]
+    if kompetanse > 10 [set kompetanse 10]
+    set lengde_opphold lengde_opphold + 1
+  ]
+  if beredskapshåndtering_stress_relatert < 0 [set beredskapshåndtering_stress_relatert 0]
+
+  ;; Her skjer sykdoms beregninger
+
+
+  ask intensiv_pasienter [set sykdom sykdom + sykdoms_faktor_pasient_økning_dag ]
+
+  ask intensiv_pasienter [
+    if count sykepleiere-on neighbors > 2 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier_sykepleier]
+    if count sykepleiere-on neighbors = 1 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier]
+    if count omdisponerte_sykepleiere-on neighbors > 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - ((count omdisponerte_sykepleiere-on neighbors / sum [kompetanse] of omdisponerte_sykepleiere-on neighbors) * 2)]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors)]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and count sykepleiere-on neighbors = 1 [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors + sykdoms_faktor_sykepleier)]
+
+
+    if sykdom > 80  and first rnd:weighted-one-of-list probability-list_død_intensiv [ [p] -> last p ] = 1 [ set døde døde + 1 set dynamisk_intensiv_pasienter dynamisk_intensiv_pasienter - 1 set døde_beredskap døde_beredskap + 1  die]
+  ]
+
+    ;; Her justeres måltall og friske pasienter blir borte
+
+
+  ask friske_pasienter [
+    if frisk = 1 [set friskmeldte_pasienter friskmeldte_pasienter + 1 die]
+    set frisk frisk + 1
+  ]
+
+  ask pasienter [
+     set lengde_opphold lengde_opphold + 1
+  ]
+;; Denne justerer størrelsen på agentene etter stress
+
+  let stress-list sort-on [ stress ] turtles let new-size 1 foreach stress-list [x -> ask x [set size new-size set new-size new-size + 0.01]]
+
+
+
+  ;; Her beregnes belegg
+  if count intensiv_pasienter > 0 [set belegg_stress_beregning (count sykepleiere / count intensiv_pasienter) ]
+  if count intensiv_pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count intensiv_pasienter]
+  if count intensiv_pasienter = 0 [set belegg 10]
+  if count intensiv_pasienter < 0 [set belegg 10]
+
+
+  ;; Her trigges omdisponering av ansatte
+  set antall_omdisponerte count intensiv_pasienter
+  set antall_die antall_omdisponerte - 30
+
+
+  if ticks > 0 and ticks < 31 and count omdisponerte_sykepleiere = 30 or count omdisponerte_sykepleiere < 30 and belegg < Trigger_omdisponering_sykepleiere_per_pasient or belegg = Trigger_omdisponering_sykepleiere_per_pasient and count sykepleiere_opplæring < 5 [create-omdisponerte_sykepleiere 5 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if count omdisponerte_sykepleiere > 5 and belegg > Trigger_normalisering_sykepleiere_per_pasient and count pasienter < 30 [ask n-of 5 omdisponerte_sykepleiere [set normalisering normalisering + 1 ]]
+  ;ask omdisponerte_sykepleiere [if normalisering = 3 [die]]
+  ;if count omdisponerte_sykepleiere > 30 [ask n-of (antall_die) omdisponerte_sykepleiere die]
+
+
+
+  ;; Her kommer omdisponerte sykepleiere til intensiv etter scenario
+  if ticks = 1 [create-sykepleiere_opplæring 15 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient] ] ]
+  ask sykepleiere_opplæring [set kompetanse kompetanse + kompetanse_faktor]
+  if ticks = 20 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person"  set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+
+
+  ;; Her oppdateres beredskaps_vellykkethet
+
+
+
+
+  ;; kommunikasjon
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) ]
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder_ppe * antall_ledelsesorganer_ppe * multipliserende_faktor_kommunikasjon) ]
+
+  ;; stress
+  if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) > 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
+  if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) = 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
+
+
+
+
+  ;; kompetanse
+
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 5 and kompetanse >= 3  ] [set antall_kompetanse_over_3 antall_kompetanse_over_3 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 3 and kompetanse >= 2  ]  [set antall_kompetanse_under_3_til_2 antall_kompetanse_under_3_til_2 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 2 and kompetanse >= 1 ] [set antall_kompetanse_under_2_til_1 antall_kompetanse_under_2_til_1 + 1] ]
+
+
+
+  if ticks = 20 [set beredskapshåndtering_kompetanse_relatert_faktor ((antall_kompetanse_over_3 * kompetanse_over_3) + (antall_kompetanse_under_3_til_2 * kompetanse_under_3) + (antall_kompetanse_under_2_til_1 * kompetanse_under_2))]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor < 250 or beredskapshåndtering_kompetanse_relatert_faktor = 250  [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert_faktor]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
+  ;; døde
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kommunikasjon)]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_døds_relatert)]
+
+  if beredskapshåndtering = 1000 or (beredskapshåndtering > 900) [set beredskaps_vellykkethet 10]
+  if beredskapshåndtering = 900 or (beredskapshåndtering > 800 and beredskapshåndtering < 900) [set beredskaps_vellykkethet 9]
+  if beredskapshåndtering = 800 or (beredskapshåndtering > 700 and beredskapshåndtering < 800) [set beredskaps_vellykkethet 8]
+  if beredskapshåndtering = 700 or (beredskapshåndtering > 600 and beredskapshåndtering < 700) [set beredskaps_vellykkethet 7]
+  if beredskapshåndtering = 600 or (beredskapshåndtering > 500 and beredskapshåndtering < 600) [set beredskaps_vellykkethet 6]
+  if beredskapshåndtering = 500 or (beredskapshåndtering > 400 and beredskapshåndtering < 500) [set beredskaps_vellykkethet 5]
+  if beredskapshåndtering = 400 or (beredskapshåndtering > 300 and beredskapshåndtering < 400) [set beredskaps_vellykkethet 4]
+  if beredskapshåndtering = 300 or (beredskapshåndtering > 200 and beredskapshåndtering < 300) [set beredskaps_vellykkethet 3]
+  if beredskapshåndtering = 200 or (beredskapshåndtering > 100 and beredskapshåndtering < 200) [set beredskaps_vellykkethet 2]
+  if beredskapshåndtering = 100 or (beredskapshåndtering > 000 and beredskapshåndtering < 100) [set beredskaps_vellykkethet 1]
+  if beredskapshåndtering < 000 [set beredskaps_vellykkethet 0]
+  tick
+
+
+
+
+end
+
+
+
+
+to go-5
+  ;; Beredskapsledelsen
+
+  if ticks = 60 [ stop ]
+  set beredskapshåndtering_stress_relatert_ticks 0
+  ;; Her gjennomføres opplæring for omdisponerte sykepleiere og stress påvirkning settes etter sannsynlighet
+  if ticks = 0 [create-sykepleiere_opplæring 15 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 0 [ask sykepleiere_opplæring [repeat dager_før_start [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 0 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+  if ticks = 0 [create-sykepleiere_opplæring 5 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 0 [ask sykepleiere_opplæring [repeat 13 [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 0 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+  if ticks = 0 [create-sykepleiere_opplæring 5 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 1 [ask sykepleiere_opplæring [repeat 10 [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 1 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+  if ticks = 1 [create-sykepleiere_opplæring 10 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 11 [ask sykepleiere_opplæring [repeat 10 [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 11 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+  if ticks = 11 [create-sykepleiere_opplæring 10 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 21 [ask sykepleiere_opplæring [repeat 10 [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 21 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+  if ticks = 21 [create-sykepleiere_opplæring 10 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if ticks = 31 [ask sykepleiere_opplæring [repeat 10 [set kompetanse kompetanse + kompetanse_faktor ]]]
+  if ticks = 31 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 0
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 0.5 ]]
+  ask sykepleiere_opplæring [if kurs_dager > 5 and first rnd:weighted-one-of-list stress_sannsynlighet-liste [ [p] -> last p ] = 1
+    [set breed omdisponerte_sykepleiere set color yellow set shape "person" set stress_faktor 1 ]]
+
+
+
+;; Her kjøres det sannynlighets beregning for om normal pasient blir intensiv pasient.
+
+
+
+
+
+  ask pasienter [
+    if lengde_opphold = liggetid_normal_pasienter or lengde_opphold > liggetid_normal_pasienter and
+    first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 0 [
+     set breed friske_pasienter set color white set shape "person" move-to one-of patches with [pcolor = farge_frisk_pasient]]
+
+
+    if first rnd:weighted-one-of-list probability-list [ [p] -> last p ] = 1[
+      set breed intensiv_pasienter set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10
+      set color red set shape "person"
+      move-to one-of patches with [pcolor = farge_intensiv_pasient]
+      ]
+
+
+      set lengde_opphold lengde_opphold + 1
+  ]
+
+   ;; Her lages normal pasienter fra input.csv
+
+  if file-at-end? [ stop ]
+  set antall_covid-19_pasienter file-read
+  create-pasienter antall_covid-19_pasienter [
+    setxy random-xcor random-ycor
+    move-to one-of patches with [pcolor = farge_normal_pasient]
+    set color green
+    set shape "person"
+    set sykdom 0
+  ]
+
+  ;; Her gjøres intensivpasienter til normal pasienter hvis sykdom er lavere en sykdoms_faktor4
+
+  ask intensiv_pasienter [
+    if lengde_opphold = lengde_opphold_ut_av_intensiv and sykdom < sykdoms_faktor_kan_ikke_utskrives [set breed pasienter set color green set shape "person" move-to one-of patches with [pcolor = farge_normal_pasient]]
+    set lengde_opphold lengde_opphold + 1
+  ]
+
+
+  ;; Her lages intensiv_pasienter for å få opp antallet pasienter, kun for teste formål
+
+ ; if count pasienter > 5 [if count intensiv_pasienter < 2 [ask n-of 3 pasienter [set breed intensiv_pasienter set color red set shape "person" move-to one-of patches with [pcolor = farge_intensiv_pasient] set antall_intensiv_pasienter antall_intensiv_pasienter + 1 set intensiv_pasient_vendepunkt_verdi (random 15) + 10 ]
+  ;]]
+
+
+  ;; flytting av sykepleiere her
+
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask sykepleiere [
+    while [not any? intensiv_pasienter-on neighbors] [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+  if count intensiv_pasienter > 0 [ask omdisponerte_sykepleiere [while [not any? intensiv_pasienter-on neighbors] [move-to one-of patches with [pcolor = farge_omdisponert]]]]
+   ask intensiv_pasienter [if count omdisponerte_sykepleiere-on neighbors > 2 [ask one-of omdisponerte_sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_omdisponert]]]]
+  ask intensiv_pasienter [if count sykepleiere-on neighbors > 2 [ask one-of sykepleiere-on neighbors [move-to one-of patches with [pcolor = farge_intensiv_sykepleier]]]]
+
+  ;; Her skjer stress beregninger
+
+
+
+  ask sykepleiere [
+    if any? sykepleiere-on neighbors [set stress stress - minus_stress_faktor_sykepleier_sykepleier]
+
+    if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + stress_faktor_sykepleier ]
+    if not any? sykepleiere-on neighbors and any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + stress_faktor_sykepleier_omdisponert ]
+
+
+
+
+
+    if stress < 50 and  belegg_stress_beregning < 1 [set stress stress + stress_faktor_belegg_under_1]
+    if stress < 50 and  belegg_stress_beregning < 2 and belegg_stress_beregning > 1 [set stress stress + stress_faktor_belegg_under2]
+    if belegg_stress_beregning > 2 or belegg_stress_beregning = 2 [set stress stress - minus_stress_faktor_belegg_over2]
+    if ticks = 37 [set stress stress - 5]
+    if stress > akseptabelt_stress_nivå and stress < kritiskt_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 1]
+    if stress > kritiskt_stress_nivå and stress < sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 5]
+    if stress > sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 20 die]
+    if stress < konstant_stress_nivå [set stress konstant_stress_nivå]
+  ]
+
+
+  ask omdisponerte_sykepleiere [
+    if any? sykepleiere-on neighbors and not any? pasienter-on neighbors [set stress stress - minus_stress_faktor_ingen_pasienter]
+
+    if not any? sykepleiere-on neighbors and not any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (sum [sykdom] of intensiv_pasienter-on neighbors / kompetanse) ]
+
+    if not any? sykepleiere-on neighbors and any? omdisponerte_sykepleiere-on neighbors and any? pasienter-on neighbors and sum [sykdom] of turtles-on neighbors > 0
+    [set stress stress + (sum [sykdom] of intensiv_pasienter-on neighbors / kompetanse) ]
+
+
+
+    if stress < 50 and belegg_stress_beregning < 1 [set stress stress + stress_faktor_belegg_under_1]
+    if stress < 50 and belegg_stress_beregning < 2 and belegg_stress_beregning > 1 [set stress stress + stress_faktor_belegg_under2]
+    if belegg_stress_beregning > 2 [set stress stress - minus_stress_faktor_belegg_over2]
+    if ticks = 37 [set stress stress - 5]
+    if stress < konstant_stress_nivå [set stress konstant_stress_nivå]
+    if stress > akseptabelt_stress_nivå and stress < kritiskt_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 1]
+    if stress > kritiskt_stress_nivå and stress < sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 5]
+    if stress > sykemelding_stress_nivå [set beredskapshåndtering_stress_relatert_ticks beredskapshåndtering_stress_relatert_ticks + 20 die]
+    if kompetanse < 10 [set kompetanse kompetanse + kompetanse_faktor_arbeid]
+    if kompetanse > 10 [set kompetanse 10]
+    set lengde_opphold lengde_opphold + 1
+  ]
+  if beredskapshåndtering_stress_relatert < 0 [set beredskapshåndtering_stress_relatert 0]
+
+  ;; Her skjer sykdoms beregninger
+
+
+  ask intensiv_pasienter [set sykdom sykdom + sykdoms_faktor_pasient_økning_dag ]
+
+  ask intensiv_pasienter [
+    if count sykepleiere-on neighbors > 2 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier_sykepleier]
+    if count sykepleiere-on neighbors = 1 and not any? omdisponerte_sykepleiere-on neighbors [set sykdom sykdom - sykdoms_faktor_sykepleier]
+    if count omdisponerte_sykepleiere-on neighbors > 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - ((count omdisponerte_sykepleiere-on neighbors / sum [kompetanse] of omdisponerte_sykepleiere-on neighbors) * 2)]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and not any? sykepleiere-on neighbors [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors)]
+    if count omdisponerte_sykepleiere-on neighbors = 1 and count sykepleiere-on neighbors = 1 [set sykdom sykdom - (sum [kompetanse] of omdisponerte_sykepleiere-on neighbors + sykdoms_faktor_sykepleier)]
+
+
+    if sykdom > 80  and first rnd:weighted-one-of-list probability-list_død_intensiv [ [p] -> last p ] = 1 [ set døde døde + 1 set dynamisk_intensiv_pasienter dynamisk_intensiv_pasienter - 1 set døde_beredskap døde_beredskap + 1  die]
+  ]
+
+    ;; Her justeres måltall og friske pasienter blir borte
+
+
+  ask friske_pasienter [
+    if frisk = 1 [set friskmeldte_pasienter friskmeldte_pasienter + 1 die]
+    set frisk frisk + 1
+  ]
+
+  ask pasienter [
+     set lengde_opphold lengde_opphold + 1
+  ]
+;; Denne justerer størrelsen på agentene etter stress
+
+  let stress-list sort-on [ stress ] turtles let new-size 1 foreach stress-list [x -> ask x [set size new-size set new-size new-size + 0.01]]
+
+
+
+  ;; Her beregnes belegg
+  if count intensiv_pasienter > 0 [set belegg_stress_beregning (count sykepleiere / count intensiv_pasienter) ]
+  if count intensiv_pasienter > 0 [set belegg (count sykepleiere + count omdisponerte_sykepleiere)  / count intensiv_pasienter]
+  if count intensiv_pasienter = 0 [set belegg 10]
+  if count intensiv_pasienter < 0 [set belegg 10]
+
+
+  ;; Her trigges omdisponering av ansatte
+  set antall_omdisponerte count intensiv_pasienter
+  set antall_die antall_omdisponerte - 30
+
+
+  if ticks > 0 and ticks < 31 and count omdisponerte_sykepleiere = 30 or count omdisponerte_sykepleiere < 30 and belegg < Trigger_omdisponering_sykepleiere_per_pasient or belegg = Trigger_omdisponering_sykepleiere_per_pasient and count sykepleiere_opplæring < 5 [create-omdisponerte_sykepleiere 5 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient]]]
+  if count omdisponerte_sykepleiere > 5 and belegg > Trigger_normalisering_sykepleiere_per_pasient and count pasienter < 30 [ask n-of 5 omdisponerte_sykepleiere [set normalisering normalisering + 1 ]]
+  ;ask omdisponerte_sykepleiere [if normalisering = 3 [die]]
+  ;if count omdisponerte_sykepleiere > 30 [ask n-of (antall_die) omdisponerte_sykepleiere die]
+
+
+
+  ;; Her kommer omdisponerte sykepleiere til intensiv etter scenario
+  if ticks = 1 [create-sykepleiere_opplæring 15 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient] ] ]
+  ask sykepleiere_opplæring [set kompetanse kompetanse + kompetanse_faktor]
+  if ticks = 20 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person"  set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
+
+
+
+  ;; Her oppdateres beredskaps_vellykkethet
+
+
+
+
+  ;; kommunikasjon
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) ]
+  if (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) = 250 or (antall_motstridende_beskjeder * antall_ledelsesorganer * multipliserende_faktor_kommunikasjon) > 250 [set beredskapshåndtering_kommunikasjon 0]
+  if ticks = 10 [set beredskapshåndtering_kommunikasjon beredskapshåndtering_kommunikasjon - (antall_motstridende_beskjeder_ppe * antall_ledelsesorganer_ppe * multipliserende_faktor_kommunikasjon) ]
+
+  ;; stress
+  if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) > 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
+  if beredskapshåndtering_stress_relatert > 0 and ( beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks) = 0 [set beredskapshåndtering_stress_relatert beredskapshåndtering_stress_relatert - beredskapshåndtering_stress_relatert_ticks]
+
+
+
+
+  ;; kompetanse
+
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 5 and kompetanse >= 3  ] [set antall_kompetanse_over_3 antall_kompetanse_over_3 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 3 and kompetanse >= 2  ]  [set antall_kompetanse_under_3_til_2 antall_kompetanse_under_3_til_2 + 1] ]
+  if ticks = 20 [ask omdisponerte_sykepleiere with [kompetanse < 2 and kompetanse >= 1 ] [set antall_kompetanse_under_2_til_1 antall_kompetanse_under_2_til_1 + 1] ]
+
+
+
+  if ticks = 20 [set beredskapshåndtering_kompetanse_relatert_faktor ((antall_kompetanse_over_3 * kompetanse_over_3) + (antall_kompetanse_under_3_til_2 * kompetanse_under_3) + (antall_kompetanse_under_2_til_1 * kompetanse_under_2))]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor < 250 or beredskapshåndtering_kompetanse_relatert_faktor = 250  [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert_faktor]
+
+  if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
+  ;; døde
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kommunikasjon)]
+  if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_døds_relatert)]
+
+  if beredskapshåndtering = 1000 or (beredskapshåndtering > 900) [set beredskaps_vellykkethet 10]
+  if beredskapshåndtering = 900 or (beredskapshåndtering > 800 and beredskapshåndtering < 900) [set beredskaps_vellykkethet 9]
+  if beredskapshåndtering = 800 or (beredskapshåndtering > 700 and beredskapshåndtering < 800) [set beredskaps_vellykkethet 8]
+  if beredskapshåndtering = 700 or (beredskapshåndtering > 600 and beredskapshåndtering < 700) [set beredskaps_vellykkethet 7]
+  if beredskapshåndtering = 600 or (beredskapshåndtering > 500 and beredskapshåndtering < 600) [set beredskaps_vellykkethet 6]
+  if beredskapshåndtering = 500 or (beredskapshåndtering > 400 and beredskapshåndtering < 500) [set beredskaps_vellykkethet 5]
+  if beredskapshåndtering = 400 or (beredskapshåndtering > 300 and beredskapshåndtering < 400) [set beredskaps_vellykkethet 4]
+  if beredskapshåndtering = 300 or (beredskapshåndtering > 200 and beredskapshåndtering < 300) [set beredskaps_vellykkethet 3]
+  if beredskapshåndtering = 200 or (beredskapshåndtering > 100 and beredskapshåndtering < 200) [set beredskaps_vellykkethet 2]
+  if beredskapshåndtering = 100 or (beredskapshåndtering > 000 and beredskapshåndtering < 100) [set beredskaps_vellykkethet 1]
+  if beredskapshåndtering < 000 [set beredskaps_vellykkethet 0]
+  tick
+
+
+
+
+end
+
 
 
 to-report total_stress
@@ -478,7 +1245,7 @@ BUTTON
 43
 795
 76
-Start simulering
+Virkeligheten
 go-1
 T
 1
@@ -587,7 +1354,7 @@ Antall_omdisponerte_ved_pandemi_start
 Antall_omdisponerte_ved_pandemi_start
 0
 100
-3.0
+15.0
 1
 1
 NIL
@@ -602,7 +1369,7 @@ dager_før_start
 dager_før_start
 0
 71
-0.0
+30.0
 1
 1
 NIL
@@ -617,7 +1384,7 @@ fast_ansatt_intensiv
 fast_ansatt_intensiv
 0
 100
-20.0
+22.0
 1
 1
 NIL
@@ -632,7 +1399,7 @@ Trigger_omdisponering_sykepleiere_per_pasient
 Trigger_omdisponering_sykepleiere_per_pasient
 0
 10
-7.7
+1.0
 0.1
 1
 NIL
@@ -662,7 +1429,7 @@ dager_opplæring_omdisponerte_etter_start
 dager_opplæring_omdisponerte_etter_start
 0
 100
-7.0
+30.0
 1
 1
 NIL
@@ -677,7 +1444,7 @@ Trigger_normalisering_sykepleiere_per_pasient
 Trigger_normalisering_sykepleiere_per_pasient
 0
 10
-4.6
+5.0
 0.1
 1
 NIL
@@ -717,15 +1484,15 @@ beredskaps_vellykkethet
 11
 
 SLIDER
-340
+339
+232
+513
 265
-514
-298
 antall_ledelsesorganer
 antall_ledelsesorganer
 0
 10
-6.0
+1.0
 1
 1
 NIL
@@ -733,14 +1500,14 @@ HORIZONTAL
 
 SLIDER
 339
-233
+265
 559
-266
+298
 antall_motstridende_beskjeder
 antall_motstridende_beskjeder
 0
-100
-8.0
+15
+0.0
 1
 1
 NIL
@@ -789,6 +1556,120 @@ beredskapshåndtering_kommunikasjon
 17
 1
 11
+
+MONITOR
+180
+544
+380
+589
+NIL
+antall_kompetanse_under_3_til_2
+17
+1
+11
+
+MONITOR
+181
+591
+381
+636
+NIL
+antall_kompetanse_under_2_til_1
+17
+1
+11
+
+MONITOR
+180
+499
+343
+544
+NIL
+antall_kompetanse_over_3
+17
+1
+11
+
+SLIDER
+339
+297
+535
+330
+Antall_ledelsesorganer_PPE
+Antall_ledelsesorganer_PPE
+0
+10
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+338
+330
+580
+363
+Antall_motstridende_beskjeder_PPE
+Antall_motstridende_beskjeder_PPE
+0
+15
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+680
+76
+788
+109
+Driftsutvalget
+go-3
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+682
+110
+772
+143
+Intensiven
+go-4
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+681
+142
+821
+175
+Beredskapsledelsen
+go-5
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## Hva gjør modellen?
@@ -1138,6 +2019,208 @@ NetLogo 6.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Virkeligheten" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go-1</go>
+    <metric>beredskaps_vellykkethet</metric>
+    <metric>beredskapshåndtering</metric>
+    <metric>beredskapshåndtering_døds_relatert</metric>
+    <metric>beredskapshåndtering_kompetanse_relatert</metric>
+    <metric>beredskapshåndtering_stress_relatert</metric>
+    <metric>beredskapshåndtering_kommunikasjon</metric>
+    <metric>døde</metric>
+    <metric>gjennomsnitt_stress</metric>
+    <metric>kummulativt_antall_intensiv</metric>
+    <metric>friskmeldte_pasienter</metric>
+    <metric>antall_kompetanse_over_3</metric>
+    <metric>antall_kompetanse_under_3_til_2</metric>
+    <metric>antall_kompetanse_under_2_til_1</metric>
+    <enumeratedValueSet variable="Antall_ledelsesorganer_PPE">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_i_ren_intensiv_sone">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_omdisponerte_ved_pandemi_start">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_omdisponering_sykepleiere_per_pasient">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_motstridende_beskjeder_PPE">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_normalisering_sykepleiere_per_pasient">
+      <value value="3.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_motstridende_beskjeder">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="fast_ansatt_intensiv">
+      <value value="22"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_ledelsesorganer">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_før_start">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_opplæring_omdisponerte_etter_start">
+      <value value="7"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Driftsutvalget" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go-3</go>
+    <metric>beredskaps_vellykkethet</metric>
+    <metric>beredskapshåndtering</metric>
+    <metric>beredskapshåndtering_døds_relatert</metric>
+    <metric>beredskapshåndtering_kompetanse_relatert</metric>
+    <metric>beredskapshåndtering_stress_relatert</metric>
+    <metric>beredskapshåndtering_kommunikasjon</metric>
+    <metric>døde</metric>
+    <metric>gjennomsnitt_stress</metric>
+    <metric>kummulativt_antall_intensiv</metric>
+    <metric>friskmeldte_pasienter</metric>
+    <metric>antall_kompetanse_over_3</metric>
+    <metric>antall_kompetanse_under_3_til_2</metric>
+    <metric>antall_kompetanse_under_2_til_1</metric>
+    <enumeratedValueSet variable="Antall_ledelsesorganer_PPE">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_i_ren_intensiv_sone">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_omdisponerte_ved_pandemi_start">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_omdisponering_sykepleiere_per_pasient">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_motstridende_beskjeder_PPE">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_normalisering_sykepleiere_per_pasient">
+      <value value="3.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_motstridende_beskjeder">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="fast_ansatt_intensiv">
+      <value value="22"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_ledelsesorganer">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_før_start">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_opplæring_omdisponerte_etter_start">
+      <value value="2"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Beredskapsledelsen" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go-4</go>
+    <metric>beredskaps_vellykkethet</metric>
+    <metric>beredskapshåndtering</metric>
+    <metric>beredskapshåndtering_døds_relatert</metric>
+    <metric>beredskapshåndtering_kompetanse_relatert</metric>
+    <metric>beredskapshåndtering_stress_relatert</metric>
+    <metric>beredskapshåndtering_kommunikasjon</metric>
+    <metric>døde</metric>
+    <metric>gjennomsnitt_stress</metric>
+    <metric>kummulativt_antall_intensiv</metric>
+    <metric>friskmeldte_pasienter</metric>
+    <metric>antall_kompetanse_over_3</metric>
+    <metric>antall_kompetanse_under_3_til_2</metric>
+    <metric>antall_kompetanse_under_2_til_1</metric>
+    <enumeratedValueSet variable="Antall_ledelsesorganer_PPE">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_i_ren_intensiv_sone">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_omdisponerte_ved_pandemi_start">
+      <value value="15"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_omdisponering_sykepleiere_per_pasient">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_motstridende_beskjeder_PPE">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_normalisering_sykepleiere_per_pasient">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_motstridende_beskjeder">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="fast_ansatt_intensiv">
+      <value value="22"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_ledelsesorganer">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_før_start">
+      <value value="26"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_opplæring_omdisponerte_etter_start">
+      <value value="10"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Intensiven" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go-5</go>
+    <metric>beredskaps_vellykkethet</metric>
+    <metric>beredskapshåndtering</metric>
+    <metric>beredskapshåndtering_døds_relatert</metric>
+    <metric>beredskapshåndtering_kompetanse_relatert</metric>
+    <metric>beredskapshåndtering_stress_relatert</metric>
+    <metric>beredskapshåndtering_kommunikasjon</metric>
+    <metric>døde</metric>
+    <metric>gjennomsnitt_stress</metric>
+    <metric>kummulativt_antall_intensiv</metric>
+    <metric>friskmeldte_pasienter</metric>
+    <metric>antall_kompetanse_over_3</metric>
+    <metric>antall_kompetanse_under_3_til_2</metric>
+    <metric>antall_kompetanse_under_2_til_1</metric>
+    <enumeratedValueSet variable="Antall_ledelsesorganer_PPE">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_i_ren_intensiv_sone">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_omdisponerte_ved_pandemi_start">
+      <value value="15"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_omdisponering_sykepleiere_per_pasient">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Antall_motstridende_beskjeder_PPE">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Trigger_normalisering_sykepleiere_per_pasient">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_motstridende_beskjeder">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="fast_ansatt_intensiv">
+      <value value="22"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="antall_ledelsesorganer">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_før_start">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="dager_opplæring_omdisponerte_etter_start">
+      <value value="30"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
