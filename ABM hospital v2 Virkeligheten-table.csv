@@ -1,17 +1,17 @@
-"BehaviorSpace results (NetLogo 6.2.0)"
-"ABM hospital v2.nlogo"
-"Virkeligheten"
-"05/08/2021 14:38:17:085 +0200"
-"min-pxcor","max-pxcor","min-pycor","max-pycor"
-"-10","10","-10","10"
-"[run number]","Antall_ledelsesorganer_PPE","antall_i_ren_intensiv_sone","Antall_omdisponerte_ved_pandemi_start","Trigger_omdisponering_sykepleiere_per_pasient","Antall_motstridende_beskjeder_PPE","Trigger_normalisering_sykepleiere_per_pasient","antall_motstridende_beskjeder","fast_ansatt_intensiv","antall_ledelsesorganer","dager_før_start","dager_opplæring_omdisponerte_etter_start","[step]","beredskaps_vellykkethet","beredskapshåndtering","beredskapshåndtering_døds_relatert","beredskapshåndtering_kompetanse_relatert","beredskapshåndtering_stress_relatert","beredskapshåndtering_kommunikasjon","døde","gjennomsnitt_stress","kummulativt_antall_intensiv","friskmeldte_pasienter","antall_kompetanse_over_3","antall_kompetanse_under_3_til_2","antall_kompetanse_under_2_til_1"
-"2","5","7","3","2","2","3.5","2","22","4","0","7","60","5","420","250","93","7","70","18","50.75555555555555","75","206","3","3","24"
-"3","5","7","3","2","2","3.5","2","22","4","0","7","60","5","403","250","80","3","70","1","50.38709677419355","71","228","2","0","30"
-"4","5","7","3","2","2","3.5","2","22","4","0","7","60","5","414","250","76","18","70","17","51.148936170212764","88","204","1","2","28"
-"1","5","7","3","2","2","3.5","2","22","4","0","7","60","5","401","250","78","3","70","6","50.86486486486486","86","223","1","2","29"
-"5","5","7","3","2","2","3.5","2","22","4","0","7","60","5","405","250","67","18","70","16","51.23913043478261","74","198","0","1","31"
-"6","5","7","3","2","2","3.5","2","22","4","0","7","60","5","404","250","81","3","70","12","50.41860465116279","70","217","1","3","28"
-"8","5","7","3","2","2","3.5","2","22","4","0","7","60","4","388","250","62","6","70","12","51.07843137254902","64","210","0","0","31"
-"7","5","7","3","2","2","3.5","2","22","4","0","7","60","5","414","250","85","9","70","21","50.8936170212766","73","193","2","1","30"
-"9","5","7","3","2","2","3.5","2","22","4","0","7","60","5","408","250","80","8","70","3","39.63157894736842","54","229","1","2","30"
-"10","5","7","3","2","2","3.5","2","22","4","0","7","60","5","417","250","86","11","70","6","50.73529411764706","65","223","2","2","28"
+BehaviorSpace results (NetLogo 6.2.0);;;;;;;;;;;;;;;;;;;;;;;;;
+ABM hospital v2.nlogo;;;;;;;;;;;;;;;;;;;;;;;;;
+Virkeligheten;;;;;;;;;;;;;;;;;;;;;;;;;
+05/08/2021 14:38:17:085 +0200;;;;;;;;;;;;;;;;;;;;;;;;;
+min-pxcor;max-pxcor;min-pycor;max-pycor;;;;;;;;;;;;;;;;;;;;;;
+-10;10;-10;10;;;;;;;;;;;;;;;;;;;;;;
+[run number];Antall_ledelsesorganer_PPE;antall_i_ren_intensiv_sone;Antall_omdisponerte_ved_pandemi_start;Trigger_omdisponering_sykepleiere_per_pasient;Antall_motstridende_beskjeder_PPE;Trigger_normalisering_sykepleiere_per_pasient;antall_motstridende_beskjeder;fast_ansatt_intensiv;antall_ledelsesorganer;dager_før_start;dager_opplæring_omdisponerte_etter_start;[step];beredskaps_vellykkethet;beredskapshåndtering;beredskapshåndtering_døds_relatert;beredskapshåndtering_kompetanse_relatert;beredskapshåndtering_stress_relatert;beredskapshåndtering_kommunikasjon;døde;gjennomsnitt_stress;kummulativt_antall_intensiv;friskmeldte_pasienter;antall_kompetanse_over_3;antall_kompetanse_under_3_til_2;antall_kompetanse_under_2_til_1
+2;5;7;3;2;2;3,5;2;22;4;0;7;60;5;420;250;93;7;70;18;50,75555556;75;206;3;3;24
+3;5;7;3;2;2;3,5;2;22;4;0;7;60;5;403;250;80;3;70;1;50,38709677;71;228;2;0;30
+4;5;7;3;2;2;3,5;2;22;4;0;7;60;5;414;250;76;18;70;17;51,14893617;88;204;1;2;28
+1;5;7;3;2;2;3,5;2;22;4;0;7;60;5;401;250;78;3;70;6;50,86486486;86;223;1;2;29
+5;5;7;3;2;2;3,5;2;22;4;0;7;60;5;405;250;67;18;70;16;51,23913043;74;198;0;1;31
+6;5;7;3;2;2;3,5;2;22;4;0;7;60;5;404;250;81;3;70;12;50,41860465;70;217;1;3;28
+8;5;7;3;2;2;3,5;2;22;4;0;7;60;4;388;250;62;6;70;12;51,07843137;64;210;0;0;31
+7;5;7;3;2;2;3,5;2;22;4;0;7;60;5;414;250;85;9;70;21;50,89361702;73;193;2;1;30
+9;5;7;3;2;2;3,5;2;22;4;0;7;60;5;408;250;80;8;70;3;39,63157895;54;229;1;2;30
+10;5;7;3;2;2;3,5;2;22;4;0;7;60;5;417;250;86;11;70;6;50,73529412;65;223;2;2;28
