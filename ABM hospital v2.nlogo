@@ -61,8 +61,8 @@ to setup
   set multipliserende_faktor_kommunikasjon 10
   set beredskapshåndtering_totaldødlighet 0.029
   set beredskapshåndtering_forventa_døde_37_dager 6
-  set beredskapshåndtering_forventa_døde_52_dager 29
-  set beredskapshåndtering_forventa_døde_82_dager 7
+  set beredskapshåndtering_forventa_døde_52_dager 6
+  set beredskapshåndtering_forventa_døde_82_dager 6
   set beredskapshåndtering_døds_relatert_multiplikator 2
   set kompetanse_over_3 10
   set kompetanse_under_3 5
@@ -108,8 +108,8 @@ to setup
   set stress_sannsynlighet-liste (list (list 1 stress_sannsynlighet_stress) (list 0 stress_sannsynlighet1_mindre) )
   set antall_intensiv_pasienter 0
   set liggetid_normal_pasienter 6
-  set statistisk_døds_sannsynlighet_intensiv 0.03
-  set statistisk_ikke_dø_intensiv 0.97
+  set statistisk_døds_sannsynlighet_intensiv 0.011860433
+  set statistisk_ikke_dø_intensiv 0.988139567
   set probability-list_død_intensiv (list (list 1 statistisk_døds_sannsynlighet_intensiv) (list 0 statistisk_ikke_dø_intensiv) )
   set antall_omdisponerte count intensiv_pasienter
   set antall_die 0
@@ -1361,9 +1361,9 @@ NIL
 HORIZONTAL
 
 SLIDER
-341
+338
 10
-513
+510
 43
 dager_før_start
 dager_før_start
@@ -2020,7 +2020,7 @@ NetLogo 6.2.0
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="Virkeligheten" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Virkeligheten" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-1</go>
     <metric>beredskaps_vellykkethet</metric>
@@ -2070,7 +2070,7 @@ NetLogo 6.2.0
       <value value="7"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Driftsutvalget" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Driftsutvalget" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-3</go>
     <metric>beredskaps_vellykkethet</metric>
@@ -2120,7 +2120,7 @@ NetLogo 6.2.0
       <value value="2"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Beredskapsledelsen" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Beredskapsledelsen" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-4</go>
     <metric>beredskaps_vellykkethet</metric>
@@ -2170,7 +2170,7 @@ NetLogo 6.2.0
       <value value="10"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Intensiven" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Intensiven" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-5</go>
     <metric>beredskaps_vellykkethet</metric>
