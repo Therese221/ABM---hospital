@@ -40,11 +40,11 @@ to setup
 
   ;; for å kjøre simulasjonen bytt addressen under til der du har lasted ned input.csv og bagrunnsbilde.png
 
-  file-open "C:/Users/There/PycharmProjects/ABM---hospital/input-scenario-lav.csv"
+  file-open "C:/Users/There/PycharmProjects/ABM---hospital/input-scenario-høy.csv"
   import-pcolors "C:/Users/There/PycharmProjects/ABM---hospital/bakgrunnsbilde.png"
 
   ;; Endre åpen_fil til input csv filen
-  set åpen_fil "C:/Users/There/PycharmProjects/ABM---hospital/input-scenario-lav.csv"
+  set åpen_fil "C:/Users/There/PycharmProjects/ABM---hospital/input-scenario-høy.csv"
 
 
   set farge_intensiv_sykepleier 95.2
@@ -392,8 +392,12 @@ to go-1
   if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor < 250 or beredskapshåndtering_kompetanse_relatert_faktor = 250  [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert_faktor]
 
   if ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
+
   ;; døde
   if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) = 250 [set beredskapshåndtering_døds_relatert 0]
+  if ticks = 59 and døde = (157 - beredskapshåndtering_forventa_døde_52_dager) or døde > (157 - beredskapshåndtering_forventa_døde_52_dager)  [set beredskapshåndtering_døds_relatert 0 ]
+
 
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
@@ -668,7 +672,10 @@ to go-3
   if "C:/Users/There/PycharmProjects/ABM---hospital/input.csv" = åpen_fil and ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor < 250 or beredskapshåndtering_kompetanse_relatert_faktor = 250  [set beredskapshåndtering_kompetanse_relatert beredskapshåndtering_kompetanse_relatert_faktor]
   if "C:/Users/There/PycharmProjects/ABM---hospital/input.csv" = åpen_fil and ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
 
-  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+   if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) = 250 [set beredskapshåndtering_døds_relatert 0]
+  if ticks = 59 and døde = (157 - beredskapshåndtering_forventa_døde_52_dager) or døde > (157 - beredskapshåndtering_forventa_døde_52_dager)  [set beredskapshåndtering_døds_relatert 0 ]
+
 
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
@@ -929,6 +936,9 @@ to go-4
 
   ;; døde
   if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) = 250 [set beredskapshåndtering_døds_relatert 0]
+  if ticks = 59 and døde = (157 - beredskapshåndtering_forventa_døde_52_dager) or døde > (157 - beredskapshåndtering_forventa_døde_52_dager)  [set beredskapshåndtering_døds_relatert 0 ]
+
 
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
@@ -1211,6 +1221,8 @@ to go-5
   if "C:/Users/There/PycharmProjects/ABM---hospital/input.csv" = åpen_fil and ticks = 20 and beredskapshåndtering_kompetanse_relatert_faktor > 250  [set beredskapshåndtering_kompetanse_relatert 250]
   ;; døde
   if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) < 250 [set beredskapshåndtering_døds_relatert beredskapshåndtering_døds_relatert - ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) ]
+  if ticks = 59 and døde > beredskapshåndtering_forventa_døde_52_dager and ( (døde - beredskapshåndtering_forventa_døde_52_dager) * beredskapshåndtering_døds_relatert_multiplikator ) = 250 [set beredskapshåndtering_døds_relatert 0]
+  if ticks = 59 and døde = (157 - beredskapshåndtering_forventa_døde_52_dager) or døde > (157 - beredskapshåndtering_forventa_døde_52_dager)  [set beredskapshåndtering_døds_relatert 0 ]
 
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_kompetanse_relatert)]
   if ticks = 59 [set beredskapshåndtering beredskapshåndtering - (250 - beredskapshåndtering_stress_relatert) ]
@@ -1451,7 +1463,7 @@ dager_før_start
 dager_før_start
 0
 71
-26.0
+30.0
 1
 1
 NIL
@@ -1481,7 +1493,7 @@ Trigger_omdisponering_sykepleiere_per_pasient
 Trigger_omdisponering_sykepleiere_per_pasient
 0
 10
-3.6
+1.0
 0.1
 1
 NIL
@@ -1511,7 +1523,7 @@ dager_opplæring_omdisponerte_etter_start
 dager_opplæring_omdisponerte_etter_start
 0
 100
-10.0
+30.0
 1
 1
 NIL
@@ -1526,7 +1538,7 @@ Trigger_normalisering_sykepleiere_per_pasient
 Trigger_normalisering_sykepleiere_per_pasient
 0
 10
-8.5
+5.0
 0.1
 1
 NIL
@@ -1574,7 +1586,7 @@ antall_ledelsesorganer
 antall_ledelsesorganer
 0
 10
-4.0
+1.0
 1
 1
 NIL
@@ -1589,7 +1601,7 @@ antall_motstridende_beskjeder
 antall_motstridende_beskjeder
 0
 15
-2.0
+0.0
 1
 1
 NIL
@@ -1681,7 +1693,7 @@ Antall_ledelsesorganer_PPE
 Antall_ledelsesorganer_PPE
 0
 10
-3.0
+2.0
 1
 1
 NIL
@@ -1696,7 +1708,7 @@ Antall_motstridende_beskjeder_PPE
 Antall_motstridende_beskjeder_PPE
 0
 15
-3.0
+2.0
 1
 1
 NIL
@@ -2102,7 +2114,7 @@ NetLogo 6.2.0
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="Virkeligheten" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Virkeligheten" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-1</go>
     <metric>beredskaps_vellykkethet</metric>
@@ -2152,7 +2164,7 @@ NetLogo 6.2.0
       <value value="7"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Driftsutvalget" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Driftsutvalget" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-3</go>
     <metric>beredskaps_vellykkethet</metric>
@@ -2202,7 +2214,7 @@ NetLogo 6.2.0
       <value value="2"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Beredskapsledelsen" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Beredskapsledelsen" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-4</go>
     <metric>beredskaps_vellykkethet</metric>
@@ -2252,7 +2264,7 @@ NetLogo 6.2.0
       <value value="10"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Intensiven" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Intensiven" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go-5</go>
     <metric>beredskaps_vellykkethet</metric>
