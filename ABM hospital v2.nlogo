@@ -60,9 +60,9 @@ to setup
   set beredskapshåndtering_kommunikasjon 250
   set multipliserende_faktor_kommunikasjon 10
   set beredskapshåndtering_totaldødlighet 0.029
-  set beredskapshåndtering_forventa_døde_37_dager 6
-  set beredskapshåndtering_forventa_døde_52_dager 6
-  set beredskapshåndtering_forventa_døde_82_dager 6
+  set beredskapshåndtering_forventa_døde_37_dager 10
+  set beredskapshåndtering_forventa_døde_52_dager 10
+  set beredskapshåndtering_forventa_døde_82_dager 10
   set beredskapshåndtering_døds_relatert_multiplikator 2
   set kompetanse_over_3 10
   set kompetanse_under_3 5
@@ -99,8 +99,8 @@ to setup
   set sykdoms_faktor_pasient_økning_dag 7
   set sykdoms_faktor_kan_ikke_utskrives 200
   set lengde_opphold_ut_av_intensiv 16
-  set statistisk_intensiv 0.0743101495087931
-  set statistisk_normal 0.925689850491207
+  set statistisk_intensiv 0.046774695
+  set statistisk_normal 0.953225305
   set statistisk_intensiv_starten 0.5
   set statistisk_normal_starten 0.5
   set probability-list (list (list 1 statistisk_intensiv) (list 0 statistisk_normal) )
@@ -110,15 +110,15 @@ to setup
   set stress_sannsynlighet-liste (list (list 1 stress_sannsynlighet_stress) (list 0 stress_sannsynlighet1_mindre) )
   set antall_intensiv_pasienter 0
   set liggetid_normal_pasienter 6
-  set statistisk_døds_sannsynlighet_intensiv 0.011860433
-  set statistisk_ikke_dø_intensiv 0.988139567
+  set statistisk_døds_sannsynlighet_intensiv 0.010153594
+  set statistisk_ikke_dø_intensiv 0.989846406
   set probability-list_død_intensiv (list (list 1 statistisk_døds_sannsynlighet_intensiv) (list 0 statistisk_ikke_dø_intensiv) )
   set antall_omdisponerte count intensiv_pasienter
   set antall_die 0
 
   reset-ticks
 
-  create-sykepleiere (fast_ansatt_intensiv - (0.5 + antall_i_ren_intensiv_sone)) [
+  create-sykepleiere (fast_ansatt_intensiv - (antall_i_ren_intensiv_sone)) [
     setxy random xcor random ycor
     move-to one-of patches with [pcolor = farge_intensiv_sykepleier]
     set color blue
@@ -1072,12 +1072,6 @@ to go-5
   ;if count omdisponerte_sykepleiere > 30 [ask n-of (antall_die) omdisponerte_sykepleiere die]
 
 
-  ;; Her kommer omdisponerte sykepleiere til intensiven etter scenario beredskapsledelsen
-  if ticks = 1 [create-sykepleiere_opplæring 15 [set color yellow set shape "person" set kompetanse (1 + random-float 1) set stress random 4 move-to one-of patches with [pcolor = farge_normal_pasient] ] ]
-  ask sykepleiere_opplæring [set kompetanse kompetanse + kompetanse_faktor]
-  if ticks = 20 [ask sykepleiere_opplæring [set breed omdisponerte_sykepleiere set color yellow set shape "person"  set stress random 4 move-to one-of patches with [pcolor = farge_omdisponert]]]
-
-
 
   ;; Her oppdateres beredskaps_vellykkethet
 
@@ -1367,7 +1361,7 @@ fast_ansatt_intensiv
 fast_ansatt_intensiv
 0
 100
-13.0
+22.0
 1
 1
 NIL
@@ -1582,7 +1576,7 @@ Antall_ledelsesorganer_PPE
 Antall_ledelsesorganer_PPE
 0
 10
-2.0
+1.0
 1
 1
 NIL
