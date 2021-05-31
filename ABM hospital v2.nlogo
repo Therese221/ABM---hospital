@@ -1331,7 +1331,7 @@ Antall_omdisponerte_ved_pandemi_start
 Antall_omdisponerte_ved_pandemi_start
 0
 100
-6.0
+15.0
 1
 1
 NIL
@@ -1361,7 +1361,7 @@ fast_ansatt_intensiv
 fast_ansatt_intensiv
 0
 100
-22.0
+40.0
 1
 1
 NIL
@@ -1376,7 +1376,7 @@ Trigger_omdisponering_sykepleiere_per_pasient
 Trigger_omdisponering_sykepleiere_per_pasient
 0
 10
-1.6
+1.0
 0.1
 1
 NIL
@@ -1406,7 +1406,7 @@ dager_opplæring_omdisponerte_etter_start
 dager_opplæring_omdisponerte_etter_start
 0
 100
-4.0
+30.0
 1
 1
 NIL
@@ -1576,7 +1576,7 @@ Antall_ledelsesorganer_PPE
 Antall_ledelsesorganer_PPE
 0
 10
-1.0
+2.0
 1
 1
 NIL
@@ -1591,7 +1591,7 @@ Antall_motstridende_beskjeder_PPE
 Antall_motstridende_beskjeder_PPE
 0
 15
-0.0
+2.0
 1
 1
 NIL
@@ -2035,7 +2035,7 @@ NetLogo 6.2.0
       <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="fast_ansatt_intensiv">
-      <value value="22"/>
+      <value value="40"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="antall_ledelsesorganer">
       <value value="4"/>
@@ -2085,7 +2085,7 @@ NetLogo 6.2.0
       <value value="1"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="fast_ansatt_intensiv">
-      <value value="22"/>
+      <value value="40"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="antall_ledelsesorganer">
       <value value="3"/>
@@ -2135,7 +2135,7 @@ NetLogo 6.2.0
       <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="fast_ansatt_intensiv">
-      <value value="22"/>
+      <value value="40"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="antall_ledelsesorganer">
       <value value="3"/>
@@ -2185,7 +2185,7 @@ NetLogo 6.2.0
       <value value="0"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="fast_ansatt_intensiv">
-      <value value="22"/>
+      <value value="40"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="antall_ledelsesorganer">
       <value value="1"/>
